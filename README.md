@@ -1,3 +1,3 @@
-# swifty-net
+# SwiftyNet
 
 A description of this package.
