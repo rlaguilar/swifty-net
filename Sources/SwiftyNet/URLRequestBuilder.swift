@@ -18,8 +18,10 @@ public struct BaseURLRequestBuilder: URLRequestBuilder {
         var components = URLComponents()
         components.path = request.path
 
-        components.queryItems = request.params.map { param in
-            URLQueryItem(name: param.key, value: "\(param.value)")
+        if !request.params.isEmpty { // avoids adding an extra `?` at the end of the url when there are no params.
+            components.queryItems = request.params.map { param in
+                URLQueryItem(name: param.key, value: "\(param.value)")
+            }
         }
 
         guard let url = components.url(relativeTo: baseURL) else {
