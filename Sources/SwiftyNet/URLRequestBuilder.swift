@@ -23,7 +23,7 @@ public struct BaseURLRequestBuilder: URLRequestBuilder {
         }
 
         guard let url = components.url(relativeTo: baseURL) else {
-            throw SwiftNetError.unableToBuildRequest
+            throw SwiftyNetError.unableToBuildURLFromRequest
         }
 
         var urlRequest = URLRequest(url: url)

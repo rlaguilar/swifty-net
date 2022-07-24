@@ -1,6 +1,5 @@
 import Foundation
 
-public enum SwiftNetError: Error {
-    case unableToBuildRequest
-    case invalidURLResponse
+public enum SwiftyNetError: Error {
+    case unableToBuildURLFromRequest
 }

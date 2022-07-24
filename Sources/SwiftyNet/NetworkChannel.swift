@@ -1,9 +1,29 @@
 import Foundation
 
-public struct NetworkChannel {
+public protocol NetworkChannelDelegate: AnyObject {
+    func networkChannel(_ channel: NetworkChannel, willSend request: Request, identifier: String) throws
+
+    func networkChannel(
+        _ channel: NetworkChannel,
+        didReceive response: (Data, URLResponse),
+        for request: Request,
+        identifier: String
+    ) throws
+
+    func networkChannel(
+        _ channel: NetworkChannel,
+        didReceive error: Error,
+        for request: Request,
+        identifier: String
+    ) throws
+}
+
+public class NetworkChannel {
     private let urlRequestBuilder: URLRequestBuilder
     private let session: URLSession
     private let requestModifier: RequestModifier
+
+    public weak var delegate: NetworkChannelDelegate?
 
     public init(
         urlRequestBuilder: URLRequestBuilder,
@@ -15,23 +35,31 @@ public struct NetworkChannel {
         self.requestModifier = MergedRequestModifier(modifiers: modifiers)
     }
 
-    public func send(request: Request) async throws -> (Data, HTTPURLResponse) {
+    public func send(request: Request) async throws -> (Data, URLResponse) {
         let urlRequest = try urlRequestBuilder.buildURLRequest(
             for: requestModifier.modify(request: request)
         )
 
-        let (data, urlResponse) = try await session.data(for: urlRequest)
+        let identifier = UUID().uuidString
+        try delegate?.networkChannel(self, willSend: request, identifier: identifier)
 
-        guard let httpResponse = urlResponse as? HTTPURLResponse else {
-            throw SwiftNetError.invalidURLResponse
+        let (data, urlResponse): (Data, URLResponse)
+
+        do {
+            (data, urlResponse) = try await session.data(for: urlRequest)
+        } catch {
+            try delegate?.networkChannel(self, didReceive: error, for: request, identifier: identifier)
+            throw error
         }
 
-        return (data, httpResponse)
+        try delegate?.networkChannel(self, didReceive: (data, urlResponse), for: request, identifier: identifier)
+
+        return (data, urlResponse)
     }
 }
 
 public extension NetworkChannel {
-    init(baseURL: URL) {
+    convenience init(baseURL: URL) {
         self.init(urlRequestBuilder: BaseURLRequestBuilder(baseURL: baseURL))
     }
 
