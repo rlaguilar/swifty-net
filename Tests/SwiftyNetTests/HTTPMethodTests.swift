@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SwiftyNet
 
-final class HTTPMethoTests: XCTestCase {
+final class HTTPMethodTests: XCTestCase {
     func testName_WhenMethodIsGet_ReturnsGET() {
         let method = HTTPMethod.get
 

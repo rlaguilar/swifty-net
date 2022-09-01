@@ -15,11 +15,21 @@ public struct BaseURLRequestBuilder: URLRequestBuilder {
     }
 
     public func buildURLRequest(for request: Request) throws -> URLRequest {
-        var components = URLComponents()
-        components.path = request.path
+        var urlRequest = try URLRequest(
+            url: request.url(baseURL: baseURL)
+        )
+        try urlRequest.set(method: request.method, using: encoder)
+        return urlRequest
+    }
+}
 
-        if !request.params.isEmpty { // avoids adding an extra `?` at the end of the url when there are no params.
-            components.queryItems = request.params.map { param in
+extension Request {
+    func url(baseURL: URL) throws -> URL {
+        var components = URLComponents()
+        components.path = path
+
+        if !params.isEmpty { // avoids adding an extra `?` at the end of the url when there are no params.
+            components.queryItems = params.map { param in
                 URLQueryItem(name: param.key, value: "\(param.value)")
             }
         }
@@ -28,15 +38,18 @@ public struct BaseURLRequestBuilder: URLRequestBuilder {
             throw SwiftyNetError.unableToBuildURLFromRequest
         }
 
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = request.method.name
+        return url
+    }
+}
 
-        switch request.method {
+extension URLRequest {
+    mutating func set(method: HTTPMethod, using encoder: JSONEncoder) throws {
+        self.httpMethod = method.name
+
+        switch method {
         case .get: break
         case .post(let body):
-            urlRequest.httpBody = try encoder.encode(body)
+            self.httpBody = try encoder.encode(body)
         }
-
-        return urlRequest
     }
 }
